@@ -68,7 +68,10 @@ class Settings(BaseSettings):
     # ── LLM / Groq ────────────────────────────────────────────────────────
     GROQ_API_KEY: str = Field(default="", description="Groq API key — set in .env, never hardcode")
     GROQ_MODEL: str = Field(default="llama3-8b-8192", description="Default Groq model ID")
-    LLM_TEMPERATURE: float = Field(default=0.0, description="LLM temperature (0.0 = deterministic)")
+    LLM_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=2.0, description="LLM temperature (0.0 = deterministic)")
+    LLM_TIMEOUT: float = Field(default=30.0, gt=0.0, description="LLM request timeout in seconds")
+    MAX_RETRIES: int = Field(default=2, ge=0, description="Maximum retries for transient LLM failures")
+    RETRY_BACKOFF: float = Field(default=0.5, ge=0.0, description="Initial transient failure backoff in seconds")
 
     # ── Razorpay ──────────────────────────────────────────────────────────
     RAZORPAY_KEY_ID: str = Field(default="", description="Razorpay API Key ID")
