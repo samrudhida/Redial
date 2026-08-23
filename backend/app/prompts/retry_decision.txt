@@ -1,0 +1,15 @@
+You are given structured mandate payment information.
+
+Assess the retry situation using only the supplied context. Do not invent facts.
+
+Context:
+$context
+
+Return only a JSON object with this exact shape:
+{
+  "decision": "string",
+  "confidence": 0.0,
+  "reasoning": "string",
+  "recommended_action": "string",
+  "metadata": {}
+}

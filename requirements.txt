@@ -1,0 +1,33 @@
+# ──────────────────────────────────────────────────
+# Mandate Retry Sequencer — Python Dependencies
+# ──────────────────────────────────────────────────
+
+# Web Framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0        # ASGI server with websocket & reload support
+python-multipart>=0.0.9          # Required for FastAPI file / form uploads
+
+# Database
+sqlalchemy>=2.0.30               # Modern async-capable ORM (SQLAlchemy 2.x style)
+psycopg2-binary>=2.9.9           # PostgreSQL driver (binary for easy install)
+alembic>=1.13.1                  # DB migration tool — works with SQLAlchemy
+
+# Configuration & Environment
+python-dotenv>=1.0.1             # Load .env files into os.environ
+
+# Data Validation
+pydantic>=2.7.0                  # Core validation used by FastAPI internally
+pydantic-settings>=2.3.0         # Pydantic v2 settings management
+
+# AI / LLM Stack
+langchain>=0.2.0                 # LLM orchestration framework
+langchain-core>=0.2.0            # Core abstractions (runnables, messages, etc.)
+langchain-groq>=0.1.5            # LangChain integration for Groq
+langgraph>=0.1.0                 # Stateful agent graph framework
+groq>=0.9.0                      # Official Groq Python SDK
+
+# Task Scheduling
+apscheduler>=3.10.4              # Background job scheduler (cron + interval jobs)
+
+# HTTP Client (for Razorpay API calls later)
+httpx>=0.27.0                    # Modern async HTTP client

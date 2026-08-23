@@ -1,0 +1,26 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Darwin",
+
+  "include": [
+    "backend"
+  ],
+
+  "exclude": [
+    "**/__pycache__",
+    ".venv",
+    "node_modules"
+  ],
+
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "pythonVersion": "3.14",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

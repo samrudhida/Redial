@@ -1,0 +1,16 @@
+Create a customer-friendly message from the supplied structured context.
+
+Adapt tone and wording to the requested channel. Do not include information not present in the context.
+
+Context:
+$context
+
+Return only a JSON object with this exact shape:
+{
+  "decision": "string",
+  "confidence": 0.0,
+  "reasoning": "string",
+  "recommended_action": "string",
+  "message": "string",
+  "metadata": {}
+}

@@ -1,0 +1,15 @@
+Analyze the supplied mandate case for an escalation recommendation.
+
+Base the recommendation only on the provided context. Explain the operational reason clearly.
+
+Context:
+$context
+
+Return only a JSON object with this exact shape:
+{
+  "decision": "string",
+  "confidence": 0.0,
+  "reasoning": "string",
+  "recommended_action": "string",
+  "metadata": {}
+}
