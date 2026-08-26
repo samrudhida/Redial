@@ -21,7 +21,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ── Internal imports ──────────────────────────────────────────────────────────
+from backend.app.api.dependencies import resolve_ai_service, resolve_razorpay_client
+from backend.app.api.exception_handlers import register_exception_handlers
+from backend.app.api.router import api_router
 from backend.app.config.settings import get_settings
+from backend.app.scheduler.scheduler import start_scheduler, stop_scheduler
 from backend.app.utils.logging import setup_logging
 
 # ── Bootstrap logging FIRST, before any other import uses getLogger() ─────────
@@ -62,13 +66,24 @@ async def lifespan(app: FastAPI):
     logger.info("  Debug Mode  : %s", settings.DEBUG)
     logger.info("═" * 60)
 
+    ai_service, fallback_reason = resolve_ai_service(settings)
+    if ai_service is not None:
+        logger.info("  AI decisions: enabled (provider=%s, model=%s)", settings.LLM_PROVIDER, ai_service.llm.get_model_name())
+    else:
+        logger.info("  AI decisions: disabled (reason=%s)", fallback_reason)
+
+    razorpay_client, razorpay_fallback_reason = resolve_razorpay_client(settings)
+    if razorpay_client is not None:
+        logger.info("  Razorpay: enabled (Test/Live Mode determined by key prefix, key_id=%s...)", settings.RAZORPAY_KEY_ID[:12])
+    else:
+        logger.info("  Razorpay: disabled — running in demo mode (reason=%s)", razorpay_fallback_reason)
+
     # TODO (Step 2): Initialise database connection pool
     # from app.database.session import init_db
     # await init_db()
 
-    # TODO (Step 3): Start APScheduler
-    # from app.scheduler.scheduler import start_scheduler
-    # start_scheduler()
+    start_scheduler()
+    logger.info("  Retry scheduler: started (interval=%ss)", settings.SCHEDULER_RETRY_INTERVAL_SECONDS)
 
     logger.info("Application startup complete. Ready to serve requests.")
 
@@ -77,9 +92,7 @@ async def lifespan(app: FastAPI):
     # ── SHUTDOWN ─────────────────────────────────────────────────────────────
     logger.info("Application shutting down...")
 
-    # TODO (Step 3): Stop APScheduler gracefully
-    # from app.scheduler.scheduler import stop_scheduler
-    # stop_scheduler()
+    stop_scheduler()
 
     # TODO (Step 2): Dispose DB connection pool
     # from app.database.session import close_db
@@ -128,6 +141,9 @@ app.add_middleware(
     allow_headers=["*"],                   # Content-Type, Authorization, etc.
 )
 
+app.include_router(api_router)
+register_exception_handlers(app)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # API Router Placeholder
@@ -166,37 +182,10 @@ async def root() -> dict:
     }
 
 
-@app.get(
-    "/health",
-    tags=["Health"],
-    summary="Health check",
-    description=(
-        "Returns the health status of the API and its dependencies. "
-        "Used by load balancers and container orchestration (K8s, ECS) "
-        "to determine if the instance should receive traffic."
-    ),
-)
-async def health_check() -> dict:
-    """
-    Health check endpoint.
+# API routes and exception handlers are registered above during app creation.
+__all__ = ["app"]
 
-    In later steps we will expand this to check:
-      - Database connectivity (can we run a SELECT 1?)
-      - Scheduler status (is APScheduler running?)
-      - LLM reachability (optional ping to Groq)
 
-    For now it returns a simple 200 OK — enough to pass a liveness probe.
-    """
-    # TODO (Step 2): Add real DB ping here
-    # db_status = await check_db_connection()
 
-    return {
-        "status": "healthy",
-        "app": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "environment": settings.APP_ENV,
-        "dependencies": {
-            "database": "not_checked",   # Will be "connected" after Step 2
-            "scheduler": "not_started",  # Will be "running" after Step 3
-        },
-    }
+
+

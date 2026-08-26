@@ -24,7 +24,7 @@ env_file path:
 from functools import lru_cache
 from typing import List
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     )
 
     # ── LLM / Groq ────────────────────────────────────────────────────────
+    LLM_PROVIDER: str = Field(default="groq", description="Registered LLM provider name to resolve through the registry")
     GROQ_API_KEY: str = Field(default="", description="Groq API key — set in .env, never hardcode")
     GROQ_MODEL: str = Field(default="llama3-8b-8192", description="Default Groq model ID")
     LLM_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=2.0, description="LLM temperature (0.0 = deterministic)")
@@ -74,11 +75,21 @@ class Settings(BaseSettings):
     RETRY_BACKOFF: float = Field(default=0.5, ge=0.0, description="Initial transient failure backoff in seconds")
 
     # ── Razorpay ──────────────────────────────────────────────────────────
-    RAZORPAY_KEY_ID: str = Field(default="", description="Razorpay API Key ID")
-    RAZORPAY_KEY_SECRET: str = Field(default="", description="Razorpay API Key Secret")
+    RAZORPAY_KEY_ID: str = Field(default="", description="Razorpay API Key ID (Test Mode: rzp_test_...) — set in .env, never hardcode")
+    RAZORPAY_KEY_SECRET: str = Field(default="", description="Razorpay API Key Secret — set in .env, never hardcode")
+    RAZORPAY_WEBHOOK_SECRET: str = Field(default="", description="Razorpay webhook signing secret, configured in the Razorpay dashboard alongside the webhook URL")
+    RAZORPAY_BASE_URL: str = Field(default="https://api.razorpay.com/v1", description="Razorpay API base URL — same for test and live mode; the key pair determines the mode")
+    RAZORPAY_TIMEOUT: float = Field(default=15.0, gt=0.0, description="Razorpay HTTP request timeout in seconds")
+
+    @field_validator("RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", mode="before")
+    @classmethod
+    def _strip_credential_whitespace(cls, value: str | None) -> str | None:
+        """Guard against a stray leading/trailing space from copy-pasting into .env — invisible, but breaks auth."""
+        return value.strip() if isinstance(value, str) else value
 
     # ── Scheduler ─────────────────────────────────────────────────────────
     SCHEDULER_TIMEZONE: str = Field(default="Asia/Kolkata", description="Timezone for APScheduler jobs")
+    SCHEDULER_RETRY_INTERVAL_SECONDS: int = Field(default=60, gt=0, description="How often the background job checks for due payment retries")
 
     # ── Logging ───────────────────────────────────────────────────────────
     LOG_LEVEL: str = Field(default="INFO", description="Python logging level: DEBUG | INFO | WARNING | ERROR")
