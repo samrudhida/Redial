@@ -29,7 +29,17 @@ class PaymentServiceProtocol(Protocol):
 class RetryServiceProtocol(Protocol):
     """Minimal dependency contract for advancing the retry schedule."""
 
-    def update_retry_schedule(self, retry_schedule_id: uuid.UUID, **kwargs: object) -> object:
+    def update_retry_schedule(
+        self,
+        retry_schedule_id: uuid.UUID,
+        *,
+        retry_strategy: str | None = None,
+        recommended_time: datetime | None = None,
+        actual_retry_time: datetime | None = None,
+        retry_count: int | None = None,
+        max_retries: int | None = None,
+        status: RetryStatus | None = None,
+    ) -> object:
         raise NotImplementedError
 
 
