@@ -143,6 +143,39 @@ def test_metrics_report_real_per_node_durations(db_session: Session) -> None:
     assert metrics.database_persistence_latency_ms >= 0
 
 
+def test_run_for_mandate_cancels_the_schedule_when_the_mandate_is_no_longer_active(db_session: Session) -> None:
+    mandate = _make_mandate_with_failed_attempt(db_session)
+    MandateService(db_session).pause_mandate(mandate.id)
+
+    runner = WorkflowRunnerService(db_session)
+    state = runner.run_for_mandate(mandate.id)
+
+    assert state.final_decision is not None
+    assert state.final_decision.retry.allowed is False
+    schedule = RetryService(db_session).get_retry_schedule_for_mandate(mandate.id)
+    assert schedule is not None
+    assert schedule.status == RetryStatus.CANCELLED
+
+
+def test_run_for_mandate_resolves_a_stale_pending_schedule_after_the_payment_already_succeeded(db_session: Session) -> None:
+    mandate = _make_mandate_with_failed_attempt(db_session)
+    payment_service = PaymentService(db_session)
+    retry_service = RetryService(db_session)
+    recovered = payment_service.record_payment_attempt(mandate.id)
+    payment_service.mark_payment_success(recovered.id)
+    schedule = retry_service.get_retry_schedule_for_mandate(mandate.id)
+    assert schedule is not None
+    # Simulate legacy data left dangling from before mark_payment_success resolved schedules.
+    retry_service.update_retry_schedule(schedule.id, status=RetryStatus.PENDING)
+
+    runner = WorkflowRunnerService(db_session)
+    runner.run_for_mandate(mandate.id)
+
+    resolved = retry_service.get_retry_schedule_for_mandate(mandate.id)
+    assert resolved is not None
+    assert resolved.status == RetryStatus.EXECUTED
+
+
 def test_run_for_mandate_books_a_new_retry_attempt_and_advances_the_schedule(db_session: Session) -> None:
     mandate = _make_mandate_with_failed_attempt(db_session)
     payment_service = PaymentService(db_session)

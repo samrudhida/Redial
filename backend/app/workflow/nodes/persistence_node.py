@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
+from backend.app.decision_engine.context_builder import RetryScheduleSnapshot
 from backend.app.models.enums import RetryStatus
 from backend.app.workflow.state import WorkflowState
 
@@ -68,7 +69,18 @@ def _execute_retry_if_allowed(
         return
     retry = state.final_decision.retry
     schedule = state.decision_context.retry_schedule
-    if not retry.allowed or schedule is None or payment_service is None or retry_service is None:
+    if schedule is None or payment_service is None or retry_service is None:
+        return
+
+    if not retry.allowed:
+        # A schedule reached via the scheduler (status pending/scheduled, due now)
+        # that turns out not to be retryable must be closed out here — otherwise
+        # it stays "due" forever and gets re-evaluated (and re-billed in AI
+        # calls) on every future tick. Every reason is_retry_allowed() can
+        # return False for a schedule already in this state is terminal: the
+        # mandate is no longer active, the latest attempt already succeeded, or
+        # retry capacity is exhausted.
+        _close_out_unretryable_schedule(state, schedule, retry_service)
         return
 
     mandate_id = uuid.UUID(state.decision_context.mandate.id)
@@ -82,3 +94,15 @@ def _execute_retry_if_allowed(
 
     next_delay = _BASE_RETRY_DELAY * (2**new_retry_count)
     retry_service.update_retry_schedule(uuid.UUID(schedule.id), retry_count=new_retry_count, actual_retry_time=now, recommended_time=now + next_delay)
+
+
+def _close_out_unretryable_schedule(state: WorkflowState, schedule: RetryScheduleSnapshot, retry_service: RetryServiceProtocol) -> None:
+    assert state.decision_context is not None  # narrowed by the caller
+    latest_attempt = state.decision_context.latest_payment_attempt
+    if latest_attempt is not None and latest_attempt.status == "succeeded":
+        status = RetryStatus.EXECUTED
+    elif schedule.retry_count >= schedule.max_retries:
+        status = RetryStatus.EXHAUSTED
+    else:
+        status = RetryStatus.CANCELLED
+    retry_service.update_retry_schedule(uuid.UUID(schedule.id), status=status, actual_retry_time=datetime.now(timezone.utc))
