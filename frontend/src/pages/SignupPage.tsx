@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { AuthLayout } from '../landing/AuthLayout'
+import { useUser } from '../hooks/useUser'
 
 const signupSchema = z
   .object({
@@ -22,6 +23,7 @@ type SignupFormValues = z.infer<typeof signupSchema>
 
 export function SignupPage() {
   const navigate = useNavigate()
+  const { setName } = useUser()
   const {
     register,
     handleSubmit,
@@ -31,10 +33,11 @@ export function SignupPage() {
     defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
   })
 
-  function onSubmit() {
+  function onSubmit(values: SignupFormValues) {
     // Same honest framing as LoginPage: no backend account is actually
     // created. This only unlocks the existing, already-open /dashboard route.
     toast.success('Account created', { description: 'Entering the demo dashboard — no live authentication is connected yet.' })
+    setName(values.fullName.trim())
     navigate('/dashboard')
   }
 

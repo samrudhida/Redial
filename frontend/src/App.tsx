@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from './context/ThemeContext'
+import { UserProvider } from './context/UserContext'
 import { readStoredSettings, useSettings } from './hooks/useSettings'
 import { AppShell } from './layout/AppShell'
 import { AiDecisionsPage } from './pages/AiDecisionsPage'
@@ -76,17 +77,19 @@ function DashboardApp() {
 function App() {
   return <QueryClientProvider client={queryClient}>
     <QueryDefaultsSync />
-    <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/*" element={<DashboardApp />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="bottom-right" richColors />
-    </ThemeProvider>
+    <UserProvider>
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/*" element={<DashboardApp />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="bottom-right" richColors />
+      </ThemeProvider>
+    </UserProvider>
   </QueryClientProvider>
 }
 

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { AuthLayout } from '../landing/AuthLayout'
+import { useUser } from '../hooks/useUser'
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
@@ -16,6 +17,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const { setName } = useUser()
   const {
     register,
     handleSubmit,
@@ -25,11 +27,12 @@ export function LoginPage() {
     defaultValues: { email: '', password: '', rememberMe: false },
   })
 
-  function onSubmit() {
+  function onSubmit(values: LoginFormValues) {
     // No authentication backend exists yet — this intentionally does not
     // fabricate a real session. It only unlocks the existing, already-open
     // /dashboard route, clearly framed as a demo rather than a real login.
     toast.success('Welcome back', { description: 'Entering the demo dashboard — no live authentication is connected yet.' })
+    setName(displayNameFromEmail(values.email))
     navigate('/dashboard')
   }
 
@@ -79,4 +82,15 @@ export function LoginPage() {
       </form>
     </AuthLayout>
   )
+}
+
+// No name field on login — derive a display name from the email's local
+// part, e.g. "sam.analyst@x.com" -> "Sam Analyst".
+function displayNameFromEmail(email: string): string {
+  return email
+    .split('@')[0]
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map(part => part[0].toUpperCase() + part.slice(1))
+    .join(' ')
 }
