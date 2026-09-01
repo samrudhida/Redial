@@ -119,7 +119,6 @@ export function DashboardPage() {
         <div>
           <div className="breadcrumb"><Link to="/dashboard">Workspace</Link><span>/</span><span>Dashboard</span></div>
           <p className="eyebrow">Recovery operations</p>
-          <h1>Good morning, Sam</h1>
           <p className="dashboard-subtitle">
             Here's what's happening across your recovery operations today.
             {isFetching && !isPending && <span className="live-indicator"><span className="live-dot" />Syncing</span>}
