@@ -226,3 +226,27 @@ def test_mark_payment_failure_reactivates_an_exhausted_schedule(db_session: Sess
     assert reactivated.id == exhausted.id
     assert reactivated.status == RetryStatus.PENDING
     assert reactivated.retry_count == 0
+
+
+def test_list_unresolved_attempts_returns_only_pending_and_processing_before_the_cutoff(db_session: Session, mandate_id) -> None:
+    service = PaymentService(db_session)
+    now = datetime.now(timezone.utc)
+
+    stale_pending = service.record_payment_attempt(mandate_id, attempted_at=now - timedelta(minutes=5))
+    fresh_pending = service.record_payment_attempt(mandate_id, amount=Decimal("100.00"), attempted_at=now - timedelta(seconds=10))
+
+    result = service.list_unresolved_attempts(before=now - timedelta(minutes=2))
+
+    assert [attempt.id for attempt in result] == [stale_pending.id]
+    assert fresh_pending.id not in [attempt.id for attempt in result]
+
+
+def test_list_unresolved_attempts_excludes_already_decided_attempts(db_session: Session, mandate_id) -> None:
+    service = PaymentService(db_session)
+    now = datetime.now(timezone.utc)
+    decided = service.record_payment_attempt(mandate_id, attempted_at=now - timedelta(minutes=5))
+    service.mark_payment_failure(decided.id)
+
+    result = service.list_unresolved_attempts(before=now)
+
+    assert decided.id not in [attempt.id for attempt in result]

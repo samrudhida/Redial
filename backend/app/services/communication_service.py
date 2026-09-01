@@ -32,6 +32,21 @@ class CommunicationService(BaseService):
         """Persist a WhatsApp notification queued for delivery."""
         return self._record(mandate_id, CommunicationChannel.WHATSAPP, message, template_name)
 
+    def get_communication(self, communication_id: uuid.UUID) -> Communication:
+        """Return a communication record or raise a domain-level not-found exception."""
+        communication = self.communications.get_by_id(communication_id)
+        if communication is None:
+            raise NotFoundError("Communication not found")
+        return communication
+
+    def list_communications(self, mandate_id: uuid.UUID | None = None, *, channel: CommunicationChannel | None = None, offset: int = 0, limit: int = 100) -> list[Communication]:
+        """Return communications, optionally filtered to one mandate and/or channel."""
+        if channel is not None:
+            return self.communications.get_by_channel(channel, mandate_id, offset=offset, limit=limit)
+        if mandate_id is not None:
+            return self.communications.get_by_mandate(mandate_id, offset=offset, limit=limit)
+        return self.communications.list_recent(offset=offset, limit=limit)
+
     def update_delivery_status(self, communication_id: uuid.UUID, delivery_status: DeliveryStatus) -> Communication:
         """Update a persisted notification's delivery outcome."""
         def action() -> Communication:

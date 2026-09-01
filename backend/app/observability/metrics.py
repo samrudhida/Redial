@@ -36,3 +36,8 @@ def failure_rate() -> float:
     with _lock:
         total = _successes + _failures
         return _failures / total if total else 0.0
+
+
+def failure_count() -> int:
+    with _lock:
+        return _failures

@@ -30,6 +30,24 @@ class DecisionLogRepository(BaseRepository[DecisionLog]):
         except SQLAlchemyError as exc:
             self._raise_database_error("get_by_confidence", exc)
 
+    def list_recent(self, *, offset: int = 0, limit: int = 100) -> list[DecisionLog]:
+        """Return decisions across every mandate, newest first."""
+        self._validate_pagination(offset, limit)
+        try:
+            statement = select(DecisionLog).order_by(DecisionLog.created_at.desc()).offset(offset).limit(limit)
+            return list(self.session.execute(statement).scalars().all())
+        except SQLAlchemyError as exc:
+            self._raise_database_error("list_recent", exc)
+
+    def get_by_mandate(self, mandate_id: uuid.UUID, *, offset: int = 0, limit: int = 100) -> list[DecisionLog]:
+        """Return all AI decisions for a mandate, newest first."""
+        self._validate_pagination(offset, limit)
+        try:
+            statement = select(DecisionLog).where(DecisionLog.mandate_id == mandate_id).order_by(DecisionLog.created_at.desc()).offset(offset).limit(limit)
+            return list(self.session.execute(statement).scalars().all())
+        except SQLAlchemyError as exc:
+            self._raise_database_error("get_by_mandate", exc)
+
     def get_latest_decision(self, mandate_id: uuid.UUID) -> DecisionLog | None:
         """Return the most recently recorded AI decision for a mandate."""
         try:

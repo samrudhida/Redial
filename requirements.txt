@@ -29,5 +29,9 @@ groq>=0.9.0                      # Official Groq Python SDK
 # Task Scheduling
 apscheduler>=3.10.4              # Background job scheduler (cron + interval jobs)
 
-# HTTP Client (for Razorpay API calls later)
+# HTTP Client (used by backend/app/payments/razorpay_client.py)
 httpx>=0.27.0                    # Modern async HTTP client
+
+# Testing
+pytest>=8.2.0                    # Test runner
+pytest-cov>=5.0.0                # Coverage reporting

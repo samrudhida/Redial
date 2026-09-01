@@ -15,15 +15,22 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from backend.app.config.settings import Settings, get_settings
 from backend.app.scheduler.jobs import run_due_retries
+from backend.app.scheduler.settlement import settle_pending_payments
 
 logger = logging.getLogger(__name__)
 
 _RETRY_JOB_ID = "run_due_retries"
+_SETTLEMENT_JOB_ID = "settle_pending_payments"
 _scheduler: BackgroundScheduler | None = None
 
 
 def _build_scheduler(settings: Settings) -> BackgroundScheduler:
-    """Construct a scheduler with the due-retries job registered, but not started."""
+    """Construct a scheduler with the due-retries job registered, but not started.
+
+    The settlement job only ever runs in development — it simulates a payment
+    gateway resolving stale pending attempts, which would be actively wrong to
+    run against a real, live gateway (see backend/app/scheduler/settlement.py).
+    """
     scheduler = BackgroundScheduler(timezone=settings.SCHEDULER_TIMEZONE)
     scheduler.add_job(
         run_due_retries,
@@ -32,6 +39,14 @@ def _build_scheduler(settings: Settings) -> BackgroundScheduler:
         max_instances=1,
         coalesce=True,
     )
+    if settings.APP_ENV == "development":
+        scheduler.add_job(
+            settle_pending_payments,
+            trigger=IntervalTrigger(seconds=settings.SCHEDULER_SETTLEMENT_INTERVAL_SECONDS),
+            id=_SETTLEMENT_JOB_ID,
+            max_instances=1,
+            coalesce=True,
+        )
     return scheduler
 
 
@@ -44,6 +59,8 @@ def start_scheduler() -> BackgroundScheduler:
     _scheduler = _build_scheduler(settings)
     _scheduler.start()
     logger.info("Retry scheduler started (interval=%ss)", settings.SCHEDULER_RETRY_INTERVAL_SECONDS)
+    if settings.APP_ENV == "development":
+        logger.info("Dev-mode settlement job started (interval=%ss)", settings.SCHEDULER_SETTLEMENT_INTERVAL_SECONDS)
     return _scheduler
 
 

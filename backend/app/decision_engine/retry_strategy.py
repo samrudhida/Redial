@@ -6,6 +6,13 @@ from datetime import datetime
 
 from backend.app.decision_engine.context_builder import DecisionContext
 
+# Decline categories the bank has already told us are not transient — retrying
+# them automatically cannot succeed and only wastes a retry attempt (and, once
+# a real gateway is wired up, a real payment attempt). These mirror the
+# categories escalation_strategy/communication_strategy already treat as
+# terminal; retry policy must agree with them, not just relay to the customer.
+_TERMINAL_DECLINE_CATEGORIES = {"account_closed", "mandate_inactive", "authentication_required"}
+
 
 def remaining_retry_attempts(context: DecisionContext) -> int:
     """Return the non-negative retry capacity available in the current schedule."""
@@ -20,7 +27,14 @@ def is_retry_allowed(context: DecisionContext) -> bool:
         return False
     if context.retry_schedule.status not in {"pending", "scheduled"}:
         return False
-    if context.latest_payment_attempt and context.latest_payment_attempt.status == "succeeded":
+    attempt = context.latest_payment_attempt
+    # A new retry may only be booked once the previous attempt has resolved to
+    # a failure — never while it's still pending/processing (unresolved) or
+    # already succeeded, or a second real charge could be attempted on top of
+    # one that's already in flight.
+    if attempt and attempt.status != "failed":
+        return False
+    if attempt and attempt.decline_category in _TERMINAL_DECLINE_CATEGORIES:
         return False
     return remaining_retry_attempts(context) > 0
 

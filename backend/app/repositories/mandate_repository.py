@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -28,6 +28,19 @@ class MandateRepository(BaseRepository[Mandate]):
     def get_active(self, *, offset: int = 0, limit: int = 100) -> list[Mandate]:
         """Return active mandates, newest first."""
         return self._get_by_status(MandateStatus.ACTIVE, offset=offset, limit=limit)
+
+    def get_by_status(self, status: MandateStatus, *, offset: int = 0, limit: int = 100) -> list[Mandate]:
+        """Return mandates in a given lifecycle status, newest first."""
+        return self._get_by_status(status, offset=offset, limit=limit)
+
+    def count_by_status(self) -> dict[MandateStatus, int]:
+        """Return the number of mandates grouped by lifecycle status."""
+        try:
+            statement = select(Mandate.status, func.count(Mandate.id)).group_by(Mandate.status)
+            rows = self.session.execute(statement).all()
+            return {status: count for status, count in rows}
+        except SQLAlchemyError as exc:
+            self._raise_database_error("count_by_status", exc)
 
     def get_failed(self, *, offset: int = 0, limit: int = 100) -> list[Mandate]:
         """Return mandates having at least one failed payment attempt.

@@ -90,6 +90,7 @@ class Settings(BaseSettings):
     # ── Scheduler ─────────────────────────────────────────────────────────
     SCHEDULER_TIMEZONE: str = Field(default="Asia/Kolkata", description="Timezone for APScheduler jobs")
     SCHEDULER_RETRY_INTERVAL_SECONDS: int = Field(default=60, gt=0, description="How often the background job checks for due payment retries")
+    SCHEDULER_SETTLEMENT_INTERVAL_SECONDS: int = Field(default=60, gt=0, description="How often the dev-only job checks for stale pending payment attempts to settle")
 
     # ── Logging ───────────────────────────────────────────────────────────
     LOG_LEVEL: str = Field(default="INFO", description="Python logging level: DEBUG | INFO | WARNING | ERROR")

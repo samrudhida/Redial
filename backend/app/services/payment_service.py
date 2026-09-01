@@ -166,6 +166,10 @@ class PaymentService(BaseService):
         """Return real per-day attempt/collection/recovery figures for the last N days."""
         return self.payment_attempts.get_daily_trend(days=days)
 
+    def list_unresolved_attempts(self, *, before: datetime | None = None, limit: int = 100) -> list[PaymentAttempt]:
+        """Return attempts still awaiting a final outcome (pending/processing), oldest first."""
+        return self.payment_attempts.list_unresolved(before=before, limit=limit)
+
     def list_attempts(self, mandate_id: uuid.UUID, *, status: PaymentStatus | None = None, offset: int = 0, limit: int = 100) -> list[PaymentAttempt]:
         """Return a mandate's attempt history, optionally filtered to one outcome."""
         if status is PaymentStatus.FAILED:

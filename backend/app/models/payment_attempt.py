@@ -39,5 +39,7 @@ class PaymentAttempt(Base):
     decline_category: Mapped[DeclineCategory | None] = mapped_column(Enum(DeclineCategory, name="decline_category", values_callable=enum_values, validate_strings=True), nullable=True, index=True)
     ai_reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
     next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    razorpay_order_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
+    razorpay_payment_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
 
     mandate: Mapped[Mandate] = relationship(back_populates="payment_attempts")

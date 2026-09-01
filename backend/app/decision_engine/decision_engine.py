@@ -114,4 +114,9 @@ class DecisionEngine:
             return "The mandate and retry schedule allow another deterministic retry."
         if context.retry_schedule is None:
             return "No retry schedule is available for this mandate."
+        attempt = context.latest_payment_attempt
+        if attempt and attempt.decline_category in {"account_closed", "mandate_inactive", "authentication_required"}:
+            return f"Latest decline is '{attempt.decline_category}' — a terminal failure that a retry cannot fix, so no further automated retries are permitted."
+        if attempt and attempt.status in {"pending", "processing"}:
+            return f"The latest payment attempt is still '{attempt.status}' — unresolved — so no new retry is booked until it succeeds or fails, to avoid a duplicate charge attempt."
         return "Mandate state, retry schedule state, payment outcome, or retry capacity prevents another retry."

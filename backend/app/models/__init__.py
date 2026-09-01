@@ -9,6 +9,8 @@ from backend.app.models.escalation import Escalation
 from backend.app.models.mandate import Mandate
 from backend.app.models.payment_attempt import PaymentAttempt
 from backend.app.models.retry_schedule import RetrySchedule
+from backend.app.models.webhook_event import WebhookEvent
+from backend.app.models.workflow_execution import WorkflowExecution, WorkflowExecutionNode
 
 __all__ = [
     "Base",
@@ -18,4 +20,7 @@ __all__ = [
     "Mandate",
     "PaymentAttempt",
     "RetrySchedule",
+    "WebhookEvent",
+    "WorkflowExecution",
+    "WorkflowExecutionNode",
 ]

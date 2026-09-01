@@ -47,3 +47,18 @@ class EscalationService(BaseService):
     def list_open_escalations(self, mandate_id: uuid.UUID | None = None, *, offset: int = 0, limit: int = 100) -> list[Escalation]:
         """Return unresolved escalations for an operational review queue."""
         return self.escalations.get_open_escalations(mandate_id, offset=offset, limit=limit)
+
+    def list_resolved_escalations(self, mandate_id: uuid.UUID | None = None, *, offset: int = 0, limit: int = 100) -> list[Escalation]:
+        """Return resolved escalations, optionally scoped to one mandate."""
+        return self.escalations.get_resolved_escalations(mandate_id, offset=offset, limit=limit)
+
+    def count_open_escalations(self) -> int:
+        """Return the number of unresolved escalations awaiting human review."""
+        return self.escalations.count_open_escalations()
+
+    def get_escalation(self, escalation_id: uuid.UUID) -> Escalation:
+        """Return an escalation or raise a domain-level not-found exception."""
+        escalation = self.escalations.get_by_id(escalation_id)
+        if escalation is None:
+            raise NotFoundError("Escalation not found")
+        return escalation

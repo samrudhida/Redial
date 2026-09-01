@@ -44,6 +44,18 @@ class MandateService(BaseService):
         """Cancel an active or paused mandate; terminal mandates cannot be changed."""
         return self._transition(mandate_id, allowed_from={MandateStatus.ACTIVE, MandateStatus.PAUSED}, target=MandateStatus.CANCELLED, operation="cancel_mandate")
 
+    def list_mandates(self, *, status: MandateStatus | None = None, customer_id: str | None = None, offset: int = 0, limit: int = 100) -> list[Mandate]:
+        """Return mandates, optionally filtered to one lifecycle status or customer."""
+        if customer_id is not None:
+            return self.mandates.search_by_customer(customer_id, offset=offset, limit=limit)
+        if status is not None:
+            return self.mandates.get_by_status(status, offset=offset, limit=limit)
+        return self.mandates.get_all(offset=offset, limit=limit)
+
+    def count_by_status(self) -> dict[MandateStatus, int]:
+        """Return the number of mandates grouped by lifecycle status."""
+        return self.mandates.count_by_status()
+
     def get_mandate(self, mandate_id: uuid.UUID) -> Mandate:
         """Return a mandate or raise a domain-level not-found exception."""
         mandate = self.mandates.get_by_id(mandate_id)

@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 
+from backend.app.core.exceptions import NotFoundError
 from backend.app.models.decision_log import DecisionLog
 from backend.app.repositories.decision_log_repository import DecisionLogRepository
 from backend.app.services.base_service import BaseService, ValidationError
@@ -33,3 +34,16 @@ class DecisionService(BaseService):
     def get_latest_decision(self, mandate_id: uuid.UUID) -> DecisionLog | None:
         """Return the latest decision audit entry for a mandate."""
         return self.decision_logs.get_latest_decision(mandate_id)
+
+    def get_decision(self, decision_log_id: uuid.UUID) -> DecisionLog:
+        """Return a decision audit entry or raise a domain-level not-found exception."""
+        decision = self.decision_logs.get_by_id(decision_log_id)
+        if decision is None:
+            raise NotFoundError("Decision log not found")
+        return decision
+
+    def list_decisions(self, mandate_id: uuid.UUID | None = None, *, offset: int = 0, limit: int = 100) -> list[DecisionLog]:
+        """Return decision audit entries, optionally filtered to one mandate."""
+        if mandate_id is not None:
+            return self.decision_logs.get_by_mandate(mandate_id, offset=offset, limit=limit)
+        return self.decision_logs.list_recent(offset=offset, limit=limit)

@@ -1,4 +1,4 @@
-"""
+"""FastAPI adapters for the application services and workflow.""""""
 app/api/
 ────────
 FastAPI router modules live here.

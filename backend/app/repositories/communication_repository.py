@@ -37,6 +37,24 @@ class CommunicationRepository(BaseRepository[Communication]):
         except SQLAlchemyError as exc:
             self._raise_database_error("get_by_channel", exc)
 
+    def list_recent(self, *, offset: int = 0, limit: int = 100) -> list[Communication]:
+        """Return communications across every mandate, newest first."""
+        self._validate_pagination(offset, limit)
+        try:
+            statement = select(Communication).order_by(Communication.sent_at.desc()).offset(offset).limit(limit)
+            return list(self.session.execute(statement).scalars().all())
+        except SQLAlchemyError as exc:
+            self._raise_database_error("list_recent", exc)
+
+    def get_by_mandate(self, mandate_id: uuid.UUID, *, offset: int = 0, limit: int = 100) -> list[Communication]:
+        """Return all communications for a mandate, newest first."""
+        self._validate_pagination(offset, limit)
+        try:
+            statement = select(Communication).where(Communication.mandate_id == mandate_id).order_by(Communication.sent_at.desc()).offset(offset).limit(limit)
+            return list(self.session.execute(statement).scalars().all())
+        except SQLAlchemyError as exc:
+            self._raise_database_error("get_by_mandate", exc)
+
     def get_delivery_failures(self, mandate_id: uuid.UUID | None = None, *, offset: int = 0, limit: int = 100) -> list[Communication]:
         """Return failed deliveries, optionally restricted to one mandate."""
         self._validate_pagination(offset, limit)

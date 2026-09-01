@@ -65,6 +65,25 @@ class RetryService(BaseService):
 
         return self._in_transaction("update_retry_schedule", action)
 
+    def get_retry_schedule(self, retry_schedule_id: uuid.UUID) -> RetrySchedule:
+        """Return a retry plan or raise a domain-level not-found exception."""
+        schedule = self.retry_schedules.get_by_id(retry_schedule_id)
+        if schedule is None:
+            raise NotFoundError("Retry schedule not found")
+        return schedule
+
+    def get_retry_schedule_for_mandate(self, mandate_id: uuid.UUID) -> RetrySchedule | None:
+        """Return the single retry plan associated with a mandate, if any."""
+        return self.retry_schedules.get_by_mandate(mandate_id)
+
+    def list_pending_retries(self, *, offset: int = 0, limit: int = 100) -> list[RetrySchedule]:
+        """Return retry plans awaiting processing, ordered by recommended time."""
+        return self.retry_schedules.get_pending_retries(offset=offset, limit=limit)
+
+    def count_pending_retries(self) -> int:
+        """Return the number of retry plans awaiting processing."""
+        return self.retry_schedules.count_pending_retries()
+
     def calculate_remaining_retries(self, retry_schedule_id: uuid.UUID) -> int:
         """Return the non-negative number of attempts still allowed by a retry plan."""
         schedule = self.retry_schedules.get_by_id(retry_schedule_id)

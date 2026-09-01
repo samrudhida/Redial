@@ -1,0 +1,37 @@
+# Build context is the repo root (used by backend/Dockerfile).
+# Keeps the image slim and prevents secrets/dev artifacts from ever being
+# sent to the Docker build context.
+
+.git
+.gitignore
+.github
+
+.venv
+venv
+ENV
+env
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.coverage
+htmlcov
+
+backend/tests
+
+# Secrets — never sent to the build context. Docker Compose injects real
+# values as container environment variables instead (see docker-compose.yml).
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+frontend
+docs
+.claude
+*.md
+!README.md
+
+.DS_Store

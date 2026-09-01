@@ -86,9 +86,18 @@ class WorkflowRunnerService:
         node history accumulated before the exception, so failed runs are
         just as observable as successful ones.
         """
-        retry_schedule = self.retry_service.get_retry_schedule_for_mandate(mandate_id)
-        communications = self.communication_service.list_communications(mandate_id, limit=20)
-        context = self.context_builder.build_for_mandate(mandate_id, retry_schedule=retry_schedule, communication_history=communications)
+        try:
+            retry_schedule = self.retry_service.get_retry_schedule_for_mandate(mandate_id)
+            communications = self.communication_service.list_communications(mandate_id, limit=20)
+            context = self.context_builder.build_for_mandate(mandate_id, retry_schedule=retry_schedule, communication_history=communications)
+        except Exception as exc:
+            self.session.rollback()
+            # No WorkflowState/DecisionContext exists yet at this point, so
+            # persist_workflow (which requires one) can't be used — write a
+            # minimal failed row directly instead of losing this failure.
+            self.execution_service.persist_failed_execution(mandate_id, str(exc))
+            raise
+
         state = WorkflowState(decision_context=context)
 
         try:

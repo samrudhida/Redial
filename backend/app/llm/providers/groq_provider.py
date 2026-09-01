@@ -47,6 +47,8 @@ class RateLimitError(ProviderError):
 class GroqLLM(BaseLLM):
     """Synchronous, thread-safe Groq adapter with bounded transient retries."""
 
+    provider = "groq"
+
     def __init__(self, settings: Settings | None = None, client: Any | None = None) -> None:
         self.settings = settings or get_settings()
         self._model = self.settings.GROQ_MODEL

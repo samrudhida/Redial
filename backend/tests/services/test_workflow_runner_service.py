@@ -6,6 +6,7 @@ import json
 import uuid
 from decimal import Decimal
 
+import pytest
 from sqlalchemy.orm import Session
 
 from backend.app.llm.ai_service import AIService
@@ -85,6 +86,33 @@ def test_run_for_mandate_persists_a_real_execution_row(db_session: Session) -> N
     assert len(detail.nodes) == len(NODE_SEQUENCE)
     assert [node.node_name for node in detail.nodes] == NODE_SEQUENCE
     assert all(node.duration_ms >= 0 for node in detail.nodes)
+
+
+def test_run_for_mandate_persists_a_failed_execution_when_context_building_itself_raises(db_session: Session, monkeypatch) -> None:
+    """A failure before the graph even starts (retry-schedule lookup,
+    communication history lookup, context assembly) must still leave a real,
+    queryable WorkflowExecution row — otherwise GET /observability/errors
+    silently hides it forever, no matter how many times it happens.
+    """
+    mandate = _make_mandate_with_failed_attempt(db_session)
+    runner = WorkflowRunnerService(db_session)
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("simulated context-build failure")
+
+    monkeypatch.setattr(runner.context_builder, "build_for_mandate", boom)
+
+    with pytest.raises(RuntimeError, match="simulated context-build failure"):
+        runner.run_for_mandate(mandate.id)
+
+    execution_service = WorkflowExecutionService(db_session)
+    errors = execution_service.list_errors(limit=10)
+    matching = [error for error in errors if error.mandate_id == mandate.id]
+    assert len(matching) == 1
+    assert "simulated context-build failure" in matching[0].exception
+
+    overview = execution_service.get_overview()
+    assert overview.failed_workflows >= 1
 
 
 def test_run_for_mandate_deterministic_only_when_no_ai_provider_configured(db_session: Session) -> None:
