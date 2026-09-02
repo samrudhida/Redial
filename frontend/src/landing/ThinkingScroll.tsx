@@ -17,12 +17,19 @@ const STAGES = [
   },
 ] as const
 
-function useStageOpacity(progress: ReturnType<typeof useScroll>['scrollYProgress'], index: number) {
+/**
+ * inactiveOpacity defaults to a dim-not-hidden 0.25 for the stepper text
+ * (normal document flow, fine to keep faintly visible). The stacked terminal
+ * panels on the right (position: absolute; inset: 0, all three sharing the
+ * same box) need a hard 0 instead — anything short of that leaves the
+ * inactive panels' text still painted underneath the active one.
+ */
+function useStageOpacity(progress: ReturnType<typeof useScroll>['scrollYProgress'], index: number, inactiveOpacity = 0.25) {
   const step = 1 / STAGES.length
   const start = index * step
   const end = start + step
   const pad = step * 0.18
-  return useTransform(progress, [Math.max(0, start - pad), start + pad, end - pad, Math.min(1, end + pad)], [0.25, 1, 1, 0.25])
+  return useTransform(progress, [Math.max(0, start - pad), start + pad, end - pad, Math.min(1, end + pad)], [inactiveOpacity, 1, 1, inactiveOpacity])
 }
 
 /** The signature interaction: reasoning stages advance as the section is pinned and scrolled through. */
@@ -34,6 +41,13 @@ export function ThinkingScroll() {
     useStageOpacity(scrollYProgress, 0),
     useStageOpacity(scrollYProgress, 1),
     useStageOpacity(scrollYProgress, 2),
+  ]
+  // Stacked panels (position: absolute; inset: 0) must fully hide when inactive,
+  // unlike the stepper text above — see useStageOpacity's doc comment.
+  const panelOpacities = [
+    useStageOpacity(scrollYProgress, 0, 0),
+    useStageOpacity(scrollYProgress, 1, 0),
+    useStageOpacity(scrollYProgress, 2, 0),
   ]
 
   return (
@@ -54,7 +68,7 @@ export function ThinkingScroll() {
         </div>
 
         <div className="thinking-visual">
-          <motion.div className="terminal-panel thinking-panel-layer" style={{ opacity: opacities[0] }}>
+          <motion.div className="terminal-panel thinking-panel-layer" style={{ opacity: panelOpacities[0] }}>
             <div className="terminal-chrome"><span /><span /><span /><em>prompt_builder.py</em></div>
             <div className="terminal-body">
               <div className="terminal-line tone-muted"><span className="terminal-prompt">{'{'}</span></div>
@@ -66,7 +80,7 @@ export function ThinkingScroll() {
             </div>
           </motion.div>
 
-          <motion.div className="terminal-panel thinking-panel-layer" style={{ opacity: opacities[1] }}>
+          <motion.div className="terminal-panel thinking-panel-layer" style={{ opacity: panelOpacities[1] }}>
             <div className="terminal-chrome"><span /><span /><span /><em>groq_provider.py</em></div>
             <div className="terminal-body thinking-model-body">
               <Bot size={22} className="thinking-model-icon" />
@@ -76,7 +90,7 @@ export function ThinkingScroll() {
             </div>
           </motion.div>
 
-          <motion.div className="terminal-panel thinking-panel-layer" style={{ opacity: opacities[2] }}>
+          <motion.div className="terminal-panel thinking-panel-layer" style={{ opacity: panelOpacities[2] }}>
             <div className="terminal-chrome"><span /><span /><span /><em>response_validator.py</em></div>
             <div className="terminal-body">
               <div className="terminal-line tone-muted"><FileJson2 size={13} /> RetryDecision</div>
