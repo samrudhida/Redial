@@ -7,10 +7,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useDashboardActivity, useDashboardSummary, useDashboardTrend } from '../hooks/useDashboard'
 import { useRunWorkflows } from '../hooks/useRunWorkflows'
-import { ConfidenceMeter } from '../ui/ConfidenceMeter'
 import { CreateMandateModal } from '../ui/CreateMandateModal'
 import { EmptyState } from '../ui/EmptyState'
 import { QueryError } from '../ui/QueryError'
+import { RecentAiDecisionsCard } from '../ui/RecentAiDecisionsCard'
 import { SectionCard as Panel } from '../ui/SectionCard'
 import { Skeleton } from '../ui/Skeleton'
 import type { DashboardSummary } from '../types/dashboard'
@@ -46,6 +46,9 @@ function DashboardSkeleton() {
       <div className="kpi-grid">
         {Array.from({ length: 4 }, (_, index) => <KpiCardSkeleton key={index} />)}
       </div>
+      <Panel title="Loading" className="decisions-panel standalone-panel">
+        <Skeleton style={{ height: 180 }} />
+      </Panel>
       <div className="chart-grid">
         {Array.from({ length: 2 }, (_, index) => (
           <Panel key={index} title="Loading">
@@ -53,14 +56,9 @@ function DashboardSkeleton() {
           </Panel>
         ))}
       </div>
-      <div className="lower-grid">
-        <Panel title="Loading" className="decisions-panel">
-          <Skeleton style={{ height: 180 }} />
-        </Panel>
-        <Panel title="Loading">
-          <Skeleton style={{ height: 180 }} />
-        </Panel>
-      </div>
+      <Panel title="Loading" className="standalone-panel">
+        <Skeleton style={{ height: 180 }} />
+      </Panel>
       <div className="bottom-grid">
         <Panel title="Loading">
           <Skeleton style={{ height: 140 }} />
@@ -276,6 +274,10 @@ function DashboardContent({ summary, onCreateMandate, highlightDecisions }: { su
         ))}
       </div>
 
+      <div className="standalone-panel">
+        <RecentAiDecisionsCard highlight={highlightDecisions} />
+      </div>
+
       <div className="chart-grid">
         <Panel title="Retry success trend" meta="Real payment outcomes over the last 14 days">
           {trend.isPending && <Skeleton style={{ height: 188 }} />}
@@ -356,48 +358,19 @@ function DashboardContent({ summary, onCreateMandate, highlightDecisions }: { su
         </Panel>
       </div>
 
-      <div className="lower-grid">
-        <Panel
-          id="recent-decisions"
-          title="Recent AI decisions"
-          meta="Latest recommendations from Redial intelligence"
-          className={`decisions-panel ${highlightDecisions ? 'panel-highlight' : ''}`}
-        >
-          {summary.recent_decisions.length === 0 ? (
-            <EmptyState compact icon={Bot} title="No decisions yet" description="AI decisions will appear here as retries are classified and scheduled." />
-          ) : (
-            <div className="table-scroll">
-              <table>
-                <thead><tr><th>Mandate</th><th>AI decision</th><th>Confidence</th><th>Timestamp</th></tr></thead>
-                <tbody>
-                  {summary.recent_decisions.map(decision => (
-                    <tr key={decision.id}>
-                      <td><strong>{truncateId(decision.mandate_id)}</strong></td>
-                      <td><strong>{decision.decision_type.replace(/_/g, ' ')}</strong><small>{decision.explanation}</small></td>
-                      <td><ConfidenceMeter score={decision.confidence_score} /></td>
-                      <td>{formatRelativeTime(decision.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <Link className="panel-link" to="/ai-decisions">View all decisions <ArrowUpRight size={14} /></Link>
-        </Panel>
-        <Panel title="Retry queue" meta="Pending recovery attempts">
-          {summary.pending_retries === 0 ? (
-            <EmptyState compact icon={ClipboardList} title="No pending retries" description="The retry queue is empty right now." />
-          ) : (
-            <EmptyState
-              compact
-              icon={ClipboardList}
-              title={`${formatCount(summary.pending_retries)} pending ${summary.pending_retries === 1 ? 'retry' : 'retries'}`}
-              description="Open the Retry Queue page for the full itemized schedule."
-            />
-          )}
-          <Link className="panel-link" to="/retry-queue">Open retry queue <ArrowUpRight size={14} /></Link>
-        </Panel>
-      </div>
+      <Panel title="Retry queue" meta="Pending recovery attempts" className="standalone-panel">
+        {summary.pending_retries === 0 ? (
+          <EmptyState compact icon={ClipboardList} title="No pending retries" description="The retry queue is empty right now." />
+        ) : (
+          <EmptyState
+            compact
+            icon={ClipboardList}
+            title={`${formatCount(summary.pending_retries)} pending ${summary.pending_retries === 1 ? 'retry' : 'retries'}`}
+            description="Open the Retry Queue page for the full itemized schedule."
+          />
+        )}
+        <Link className="panel-link" to="/retry-queue">Open retry queue <ArrowUpRight size={14} /></Link>
+      </Panel>
 
       <div className="bottom-grid">
         <RecentActivityPanel />

@@ -342,6 +342,7 @@ button .thinking-pulse { margin-top: 0; }
 .pie-legend b { margin-left: auto; color: var(--text); font-size: 10px; }
 
 .lower-grid, .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(330px, 1fr); gap: 15px; margin-bottom: 15px; }
+.standalone-panel { margin-bottom: 15px; }
 .decisions-panel { overflow: hidden; }
 .table-scroll { overflow-x: auto; margin: 12px -19px 0; }
 .decisions-panel table { width: 100%; border-collapse: collapse; min-width: 790px; }
@@ -372,6 +373,25 @@ button .thinking-pulse { margin-top: 0; }
 .status-badge.pending { background: var(--neutral-soft); color: var(--neutral); }
 .panel-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 13px; color: var(--accent); font-size: 10px; font-weight: 800; transition: gap .16s ease; }
 .panel-link:hover { gap: 8px; }
+
+.ai-decision-list { display: grid; margin-top: 10px; }
+.ai-decision-row { border-bottom: 1px solid var(--border); }
+.ai-decision-row:last-child { border-bottom: 0; }
+.ai-decision-summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: 100%; padding: 11px 2px; border: 0; background: transparent; cursor: pointer;
+  color: inherit; font: inherit; text-align: left;
+}
+.ai-decision-summary:hover .ai-decision-headline { color: var(--accent); }
+.ai-decision-headline { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 11px; font-weight: 650; transition: color .16s ease; }
+.ai-decision-meta { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+.ai-decision-meta small { color: var(--text-muted); font-size: 9px; white-space: nowrap; }
+.ai-decision-chevron { flex: 0 0 auto; color: var(--text-muted); transition: transform .2s ease; }
+.ai-decision-chevron.expanded { transform: rotate(180deg); }
+.ai-decision-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+.ai-decision-detail.expanded { grid-template-rows: 1fr; }
+.ai-decision-detail-inner { overflow: hidden; }
+.ai-decision-detail-inner p { margin: 0 0 12px; padding-right: 2px; color: var(--text-muted); font-size: 10px; line-height: 1.55; }
 
 .queue-list { display: grid; margin-top: 12px; }
 .queue-row { display: grid; grid-template-columns: 62px minmax(100px, 1fr) 74px 67px 46px; align-items: center; gap: 8px; padding: 13px 0; border-top: 1px solid var(--border); }
